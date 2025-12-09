@@ -22,4 +22,44 @@ public class IntegrationTests : IClassFixture<TestWebApplicationFactory<Program>
         var content = await response.Content.ReadAsStringAsync();
         Assert.Equal("Hello World!", content);
     }
+
+    [Fact]
+    public async Task ValidatePhone_ReturnsTrue_WhenPhoneNumberIsValid()
+    {
+        // Arrange
+        var validPhoneNumber = "+34666777888";
+
+        // Act
+        var response = await _client.GetAsync($"/validate-phone?phoneNumber={Uri.EscapeDataString(validPhoneNumber)}");
+
+        // Assert
+        response.EnsureSuccessStatusCode();
+        var content = await response.Content.ReadAsStringAsync();
+        Assert.Contains("\"isValid\":true", content);
+        Assert.Contains(validPhoneNumber, content);
+    }
+
+    [Theory]
+    [InlineData("666777888", "missing +34 prefix")]
+    [InlineData("+3466677788", "only 8 digits")]
+    [InlineData("+346667778889", "10 digits instead of 9")]
+    [InlineData("+44666777888", "wrong country code")]
+    [InlineData("+34 666 777 888", "contains spaces")]
+    [InlineData("+34-666-777-888", "contains dashes")]
+    [InlineData("+34abc123456", "contains letters")]
+    [InlineData("", "empty string")]
+    [InlineData("+34", "only country code")]
+    public async Task ValidatePhone_ReturnsFalse_WhenPhoneNumberIsInvalid(string phoneNumber, string reason)
+    {
+        // Arrange
+        // reason parameter is for test documentation only
+
+        // Act
+        var response = await _client.GetAsync($"/validate-phone?phoneNumber={Uri.EscapeDataString(phoneNumber)}");
+
+        // Assert
+        response.EnsureSuccessStatusCode();
+        var content = await response.Content.ReadAsStringAsync();
+        Assert.Contains("\"isValid\":false", content);
+    }
 }
