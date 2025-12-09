@@ -62,4 +62,51 @@ public class IntegrationTests : IClassFixture<TestWebApplicationFactory<Program>
         var content = await response.Content.ReadAsStringAsync();
         Assert.Contains("\"isValid\":false", content);
     }
+
+    [Fact]
+    public async Task DaysBetween_ReturnsCorrectDayCount()
+    {
+        // Arrange
+        var startDate = "2024-01-01";
+        var endDate = "2024-01-10";
+
+        // Act
+        var response = await _client.GetAsync($"/days-between?startDate={startDate}&endDate={endDate}");
+
+        // Assert
+        response.EnsureSuccessStatusCode();
+        var content = await response.Content.ReadAsStringAsync();
+        Assert.Contains("\"daysBetween\":9", content);
+    }
+
+    [Fact]
+    public async Task DaysBetween_ReturnsAbsoluteValue_WhenEndDateBeforeStartDate()
+    {
+        // Arrange
+        var startDate = "2024-01-10";
+        var endDate = "2024-01-01";
+
+        // Act
+        var response = await _client.GetAsync($"/days-between?startDate={startDate}&endDate={endDate}");
+
+        // Assert
+        response.EnsureSuccessStatusCode();
+        var content = await response.Content.ReadAsStringAsync();
+        Assert.Contains("\"daysBetween\":9", content);
+    }
+
+    [Fact]
+    public async Task DaysBetween_ReturnsZero_WhenSameDate()
+    {
+        // Arrange
+        var date = "2024-01-01";
+
+        // Act
+        var response = await _client.GetAsync($"/days-between?startDate={date}&endDate={date}");
+
+        // Assert
+        response.EnsureSuccessStatusCode();
+        var content = await response.Content.ReadAsStringAsync();
+        Assert.Contains("\"daysBetween\":0", content);
+    }
 }

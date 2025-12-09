@@ -1,3 +1,5 @@
+using System.Text.RegularExpressions;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -6,6 +8,9 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+// Static compiled regex for phone number validation (better performance)
+var spanishPhoneRegex = new Regex(@"^\+34\d{9}$", RegexOptions.Compiled);
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -25,14 +30,17 @@ app.MapGet("/days-between", (DateTime startDate, DateTime endDate) =>
 .WithName("GetDaysBetween")
 .WithOpenApi();
 
-// Validate phone numbrer endpoint
+// Validate phone number endpoint
 // receive by querystring a parameter called phoneNumber
 // validate phoneNumber with Spanish format, for example +34666777888
 // if phoneNumber is valid return true
-app.MapGet("/validate-phone", (string phoneNumber) =>
+app.MapGet("/validate-phone", (string? phoneNumber) =>
 {
-    var regex = new System.Text.RegularExpressions.Regex(@"^\+34\d{9}$");
-    var isValid = regex.IsMatch(phoneNumber);
+    if (string.IsNullOrEmpty(phoneNumber))
+    {
+        return Results.Ok(new { phoneNumber, isValid = false });
+    }
+    var isValid = spanishPhoneRegex.IsMatch(phoneNumber);
     return Results.Ok(new { phoneNumber, isValid });
 })
 .WithName("ValidatePhoneNumber")
